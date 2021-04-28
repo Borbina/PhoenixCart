@@ -30,7 +30,7 @@
 
     function execute() {
       if ( isset($_GET['tabaction']) ) {
-        $ppstatus_query = tep_db_query("select comments from orders_status_history where orders_id = '" . (int)$_GET['oID'] . "' and orders_status_id = '" . (int)OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID . "' and comments like '%Transaction ID:%' order by date_added limit 1");
+        $ppstatus_query = tep_db_query("select comments from orders_status_history where orders_id = '" . (int)$_GET['oID'] . "' and orders_status_id = '" . (int)MODULE_PAYMENT_CSOB_PROCESSING_ORDER_STATUS_ID . "' and comments like '%Transaction ID:%' order by date_added limit 1");
         if ( tep_db_num_rows($ppstatus_query) ) {
           $ppstatus = tep_db_fetch_array($ppstatus_query);
 

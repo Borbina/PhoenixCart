@@ -37,13 +37,52 @@ class Payment extends \OndraKoupil\Csob\Payment {
      */
     public $status = 0;
 
+    /**
+     * 
+     * @var DateTime
+     */
+    private $updated;
+    private $order;
+
+    /**
+     * Payment 
+     * 
+     * @param \order $order
+     * @param boolean $oneClickPayment
+     */
     public function __construct(\order $order, $oneClickPayment = false) {
-        
-        
-        $merchantData = $order->get_id() ? json_encode(['orderId' => $order->get_id(), 'customerId' => $order->customer['id'], 'payment' => $_SESSION['payment'], 'sessiontoken' => $_SESSION['sessiontoken']]) : [];
+        if (empty($order->id)) {
+            throw new Exception('Order without number');
+        }
+
+        $this->order = $order;
+
+        $order_query = tep_db_query("SELECT * FROM csob WHERE orders_id = " . (int) $order->id);
+        $paymentData = $order_query->fetch_assoc();
+        if (!empty($paymentData && array_key_exists('payId', $paymentData))) {
+            $this->payId = $paymentData['payId'];
+            $this->status = $paymentData['paymentStatus'];
+            $this->updated = $paymentData['updated'];
+        }
+
+        $merchantInfo = [
+            'orderId' => $order->get_id(),
+            'customerId' => $order->customer['id'],
+        ];
+
+        if (array_key_exists('payment', $_SESSION)) {
+            $merchantInfo['payment'] = array_key_exists('payment', $_SESSION) ? $_SESSION['payment'] : $this;
+        }
+        if (array_key_exists('sessiontoken', $_SESSION)) {
+            $merchantInfo['sessiontoken'] = $_SESSION['sessiontoken'];
+        }
+
+        $merchantData = $order->get_id() ? json_encode($merchantInfo) : [];
         parent::__construct($order->get_id(), $merchantData, $order->customer['id'], $oneClickPayment);
-        
-       $lang_query = tep_db_query("SELECT code FROM languages WHERE languages_id = " . (int) $_SESSION['languages_id']);
+    }
+
+    public function orderToPayment() {
+        $lang_query = tep_db_query("SELECT code FROM languages WHERE languages_id = " . (int) $_SESSION['languages_id']);
         $lang = tep_db_fetch_array($lang_query);
 
         if ($lang['code'] == 'cs') {
@@ -52,14 +91,14 @@ class Payment extends \OndraKoupil\Csob\Payment {
 
         $this->language = strtoupper($lang['code']);
         $order_total_modules = new \order_total();
-        $order->totals = $order_total_modules->process();
+        $this->order->totals = $order_total_modules->process();
 
-        if (!empty($order->totals)) {
-            if (isset($order->totals[0]['value'])) {
-                $this->addCartItem($order->totals[0]['title'], 1, $order->totals[0]['value']);
+        if (!empty($this->order->totals)) {
+            if (isset($this->order->totals[0]['value'])) {
+                $this->addCartItem($this->order->totals[0]['title'], 1, $this->order->totals[0]['value']);
             }
-            if (isset($order->totals[1]['value'])) {
-                $this->addCartItem($order->totals[1]['title'], 1, $order->totals[1]['value']);
+            if (isset($this->order->totals[1]['value'])) {
+                $this->addCartItem($this->order->totals[1]['title'], 1, $this->order->totals[1]['value']);
             }
         }
     }
@@ -69,9 +108,34 @@ class Payment extends \OndraKoupil\Csob\Payment {
      * @return int status id
      */
     public function getStatus() {
+        $start_date = new \DateTime($this->updated);
+        $since_start = $start_date->diff(new \DateTime());
+        if ($since_start->i) {
+            $this->requestStatus(); // Load from Bank API
+        } else {
+            $this->loadPayment($this->payId); //Load from DB Cache
+        }
         return $this->status;
     }
 
+    /**
+     * Load payment's info by payId
+     * @param type $payId
+     */
+    public function loadPayment($payId) {
+        $order_query = tep_db_query("SELECT * FROM csob WHERE payId = \"" . $payId . '"');
+        $paymentData = $order_query->fetch_assoc();
+        if (!empty($paymentData && array_key_exists('payId', $paymentData))) {
+            $this->payId = $paymentData['payId'];
+            $this->status = $paymentData['paymentStatus'];
+            $this->updated = $paymentData['updated'];
+        }
+    }
+
+    /**
+     * store status in 
+     * @param int $status
+     */
     public function setStatus(int $status) {
         $this->status = $status;
     }
@@ -87,14 +151,21 @@ class Payment extends \OndraKoupil\Csob\Payment {
         return $this->api;
     }
 
+    /**
+     * Establish new payment record
+     */
     public function saveNewPayment() {
         if ($this->getPayId()) {
-            tep_db_query("INSERT INTO csob (payId,paymentStatus, orders_id) VALUES ('" . $this->getPayId() . "', " . $this->getStatus() . ", " . $this->orderNo . ")");
+            tep_db_query("INSERT INTO csob (payId,paymentStatus, orders_id, updated) VALUES ('" . $this->payId . "', " . $this->getStatus() . ", " . $this->orderNo . ",NOW())");
         }
     }
 
+    /**
+     * Save payment's status into database
+     */
     public function savePaymentState() {
-        tep_db_query("UPDATE csob SET paymentStatus = " . $this->getStatus() . " WHERE payId = '" . $this->getPayId() . "'");
+        tep_db_query("UPDATE csob SET paymentStatus = " . $this->status . ", `updated`=NOW() WHERE payId = '" . $this->payId . "'");
+        $this->updated = (new \DateTime())->format('Y-m-d H:i:s');
     }
 
     /**
@@ -103,12 +174,21 @@ class Payment extends \OndraKoupil\Csob\Payment {
      * @return array payment gw response
      */
     public function requestPayment() {
+        $this->orderToPayment();
         $paymentData = $this->getApi()->paymentInit($this);
         if (array_key_exists('paymentStatus', $paymentData)) {
             $this->status = $paymentData['paymentStatus'];
+            $this->payId = $paymentData['payId'];
+            $this->saveNewPayment();
         }
-        $this->saveNewPayment();
         return $paymentData;
+    }
+
+    public function requestStatus() {
+        $this->status = $this->getApi()->paymentStatus($this->payId);
+        $this->foreignId = $this->payId;
+        $this->savePaymentState();
+        return $this->status;
     }
 
     /**
@@ -126,7 +206,7 @@ class Payment extends \OndraKoupil\Csob\Payment {
                 // URL adresa API - výchozí je adresa testovacího (integračního) prostředí,
                 // až budete připraveni přepnout se na ostré rozhraní, sem zadáte
                 // adresu ostrého API. Nezapomeňte také na ostrý veřejný klíč banky.
-                GatewayUrl::TEST_LATEST
+                \Ease\Functions::cfg('MODULE_PAYMENT_CSOB_PRODUCTION') == 'True' ? GatewayUrl::PRODUCTION_LATEST : GatewayUrl::TEST_LATEST
         );
     }
 
@@ -219,7 +299,7 @@ class Payment extends \OndraKoupil\Csob\Payment {
                 $error = 'Internal error'; // (interní chyba ve zpracování požadavku)
                 break;
             default:
-                throw new Exception('Unknown Payment response code: ' . $result_array['resultCode']);
+                throw new Exception('Unknown Payment response code: ' . $code);
                 break;
         }
         return $error;

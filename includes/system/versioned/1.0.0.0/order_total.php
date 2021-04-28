@@ -12,10 +12,13 @@
 
   class order_total {
     var $modules;
+      public $order;
 
 // class constructor
-    function __construct() {
+    function __construct($order = null) {
       global $language;
+      
+      $this->order = $order;
 
       if (defined('MODULE_ORDER_TOTAL_INSTALLED') && tep_not_null(MODULE_ORDER_TOTAL_INSTALLED)) {
         $this->modules = explode(';', MODULE_ORDER_TOTAL_INSTALLED);

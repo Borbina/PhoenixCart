@@ -14,15 +14,16 @@ if (file_exists('./vendor/autoload.php')) {
 
 include 'includes/configure.php';
 
+
 $prefix = file_exists('./db/') ? './db/' : '../db/';
 
 $sqlOptions = [
-    'dbType' => constant('DB_CONNECTION'),
+    'dbType' => defined('DB_CONNECTION') ? constant('DB_CONNECTION') : 'mysql',
     'server' => constant('DB_SERVER'),
     'username' => constant('DB_SERVER_USERNAME'),
     'password' => constant('DB_SERVER_PASSWORD'),
     'database' => constant('DB_DATABASE'),
-    'port' => constant('DB_SERVER_PORT')
+    'port' =>  defined('DB_SERVER_PORT') ?  constant('DB_SERVER_PORT') : 3306
 ];
 
 if (strstr(Ease\Functions::cfg('DB_CONNECTION'), 'sqlite')) {

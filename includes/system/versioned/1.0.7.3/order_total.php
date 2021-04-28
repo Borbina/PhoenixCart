@@ -15,13 +15,13 @@
     public $modules;
 
 // class constructor
-    function __construct() {
+    function __construct($order = null) {
       if (defined('MODULE_ORDER_TOTAL_INSTALLED') && tep_not_null(MODULE_ORDER_TOTAL_INSTALLED)) {
         $this->modules = explode(';', MODULE_ORDER_TOTAL_INSTALLED);
 
         foreach ($this->modules as $value) {
           $class = pathinfo($value, PATHINFO_FILENAME);
-          $GLOBALS[$class] = new $class();
+          $GLOBALS[$class] = new $class($order);
         }
       }
     }

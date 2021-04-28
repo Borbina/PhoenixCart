@@ -23,7 +23,7 @@ const HEADING_TITLE = 'Informace o mém účtu';
 
 define('TEXT_ORIGIN_LOGIN',
     '<font color="#FF0000"><small><strong>poznámka:</strong></small></font> Pokud už máte účet, přihlašte se <a href="%s"><u>zde</u></a>.',
-    true);
+);
 
 define('EMAIL_SUBJECT', 'Vítáme Vás v eshopu '.STORE_NAME);
 define('EMAIL_GREET_MR', 'Vážený pane %s,'."\n\n");
@@ -50,14 +50,14 @@ define('EMAIL_WARNING',
 // CCGV
 define('EMAIL_GV_INCENTIVE_HEADER',
     "\n\n".'As part of our welcome to new customers, we have sent you an e-Gift Voucher worth %s',
-    true);
+);
 define('EMAIL_GV_REDEEM',
     'The redeem code for the e-Gift Voucher is %s, you can enter the redeem code when checking out while making a purchase',
-    true);
+);
 const EMAIL_GV_LINK = 'or by following this link ';
 define('EMAIL_COUPON_INCENTIVE_HEADER',
     'Congratulations, to make your first visit to our online shop a more rewarding experience we are sending you an e-Discount Coupon.'."\n".' Below are details of the Discount Coupon created just for you'."\n");
 define('EMAIL_COUPON_REDEEM',
     'To use the coupon enter the redeem code which is %s during checkout while making a purchase',
-    true);
+);
 ?>
