@@ -322,7 +322,7 @@ const TABLE_HEADING_OR = '-nebo-';
 //const HEADER_TOGGLE_NAV = 'Toggle Navigation';
 //const HEADER_HOME = '<i class="glyphicon glyphicon-home"></i><span class="hidden-sm"> Home</span>';
 //const HEADER_WHATS_NEW = '<i class="glyphicon glyphicon-certificate"></i><span class="hidden-sm">  Nové zboží</span>';
-//const HEADER_SPECIALS = '<i class="glyphicon glyphicon-fire"></i><span class="hidden-sm"> Speciální nabídky</span>';
+const HEADER_SPECIALS = '<i class="glyphicon glyphicon-fire"></i><span class="hidden-sm"> Speciální nabídky</span>';
 //const HEADER_REVIEWS = '<i class="glyphicon glyphicon-comment"></i><span class="hidden-sm"> Hodnocení</span>';
 // header dropdowns
 //const HEADER_ACCOUNT_LOGIN = '<i class="glyphicon glyphicon-log-in"></i> Přihlásit';

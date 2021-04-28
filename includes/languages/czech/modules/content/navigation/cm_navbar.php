@@ -22,7 +22,7 @@ const HEADER_SITE_SETTINGS = '<i class="glyphicon glyphicon-cog"></i><span class
 const HEADER_TOGGLE_NAV = 'Přepnout';
 const HEADER_HOME = '<i class="glyphicon glyphicon-home"></i><span class="hidden-lg"> Home</span>';
 const HEADER_WHATS_NEW = '<i class="glyphicon glyphicon-certificate"></i><span class="hidden-lg">  Novinky</span>';
-const HEADER_SPECIALS = '<i class="glyphicon glyphicon-fire"></i><span class="hidden-lg"> Slevy</span>';
+//const HEADER_SPECIALS = '<i class="glyphicon glyphicon-fire"></i><span class="hidden-lg"> Slevy</span>';
 const HEADER_REVIEWS = '<i class="glyphicon glyphicon-comment"></i><span class="hidden-lg"> Hodnocení</span>';
   // header dropdowns
 const HEADER_ACCOUNT_LOGIN = '<i class="glyphicon glyphicon-log-in"></i> Přichlásit';

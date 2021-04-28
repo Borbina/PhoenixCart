@@ -52,7 +52,6 @@ const CCGV_FAQ = 'dárkový poukaz FAQ.';
 const ORDERS = 'Objednávky';
 const MY_ACCOUNT_HISTORY_MESSAGES = 'Zprávy';
 const MY_ACCOUNT_HISTORY_MESSAGES_DESC = 'Archiv komunikace s Vámi';
-const MY_ACCOUNT_INFORMATION = 'Zabezpečení';
 const MY_ACCOUNT_INFORMATION_DESC = 'Jméno, heslo, telefon';
 const MY_ACCOUNT_PAYMENT = 'Způsob placení';
 const MY_ACCOUNT_PAYMENT_DESC = 'Nastavte si výchozí způsob platby';
