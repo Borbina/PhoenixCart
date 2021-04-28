@@ -28,7 +28,7 @@
 
     function process() {
       global $order, $currencies;
-
+      
       $this->output[] = array('title' => $this->title . ':',
                               'text' => $currencies->format($order->info['subtotal'], true, $order->info['currency'], $order->info['currency_value']),
                               'value' => $order->info['subtotal']);

@@ -12,6 +12,7 @@
 /debian/ce-phoenix-admin.substvars
 /debian/ce-phoenix-admin/
 /deb/
-
+csob.zip
 /vendor/
 /ext/composer/
+/nbproject/private/

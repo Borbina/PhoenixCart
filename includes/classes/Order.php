@@ -9,12 +9,16 @@
 namespace PureOSC;
 
 /**
- * Description of Order
+ * Better Order by PureHTML
  *
  * @author vitex
  */
 class Order extends \order {
 
+    /**
+     * PureHTML's Order class
+     * @param int $order_id
+     */
     public function __construct($order_id = null) {
         $this->customer['id'] = null;
 
@@ -23,15 +27,22 @@ class Order extends \order {
         } else {
             parent::__construct($order_id);
             $this->set_id($order_id);
-            self::updateTotals();
+//          self::updateTotals();
         }
     }
 
     public function updateTotals() {
-        $order_total_modules = new order_total();
-        $order->totals = $order_total_modules->process();
+        global $order;
+        $order = $this;
+        $order_total_modules = new \order_total();
+        $this->totals = $order_total_modules->process();
     }
 
+    
+    public function getPaymentStatus() {
+    
+    }
+    
     public function getStatus() {
         return array_key_exists('orders_status_id', $this->info) ? intval($this->info['orders_status_id']) : 0;
     }
@@ -61,6 +72,14 @@ class Order extends \order {
                 tep_redirect(tep_href_link('checkout_payment.php', 'payment_error=' . 'csob' . '&error=' . $resultCode));
                 break;
         }
+    }
+
+    public function save() {
+
+        require_once 'includes/system/segments/checkout/insert_order.php';
+
+        $this->set_id($GLOBALS['order_id'] );
+        
     }
 
 }

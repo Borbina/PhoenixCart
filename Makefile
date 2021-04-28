@@ -69,4 +69,8 @@ release:
 	docker push purehtml/ce-phoenix:$(nextversion)
 	docker push purehtml/ce-phoenix:latest
 
+csob:
+	zip -r csob.zip `git diff-tree --no-commit-id --name-only -r  bcc63ef861eb745cf3e4e65930cc311a76b300c0`
+
+
 

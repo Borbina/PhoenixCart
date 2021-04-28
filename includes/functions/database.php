@@ -72,7 +72,7 @@
   }
 
   function tep_db_prepare_input($input) {
-    return Text::input($input);
+    return Text::input(strval($input));
   }
 
   function tep_db_affected_rows($link = 'db') {

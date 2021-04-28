@@ -40,7 +40,7 @@
     }
 
     public function set_id($order_id) {
-      $this->id = tep_db_prepare_input($order_id);
+      $this->id = tep_db_prepare_input(strval($order_id));
     }
 
   }

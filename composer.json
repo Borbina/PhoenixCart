@@ -15,9 +15,7 @@
         "vitexsoftware/ease-twbootstrap4-widgets-flexibee": "dev-abraflexi",
         "adamstipak/webpay-php": "dev-master",
         "vitexsoftware/ease-fluentpdo": "*",
-        "ondrakoupil/csob-eapi-paygate": "dev-master"
-    },
-    "require-dev": {
+        "ondrakoupil/csob-eapi-paygate": "dev-master",
         "robmorgan/phinx": "dev-master"
     },
     "autoload": {

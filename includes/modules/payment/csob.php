@@ -31,6 +31,11 @@ class csob extends abstract_payment_module {
      * @var string
      */
     private $lastMessage = '';
+
+    /**
+     * Image body
+     * @var string
+     */
     public $logo = '';
 
     /**
@@ -88,15 +93,20 @@ class csob extends abstract_payment_module {
         }
 
         if (array_key_exists('admin', $_SESSION)) {
-            $this->description .= '<br>' . $this->checkPayGwSatus();
+            if (defined('MODULE_PAYMENT_CSOB_MERCHANT_ID')) {
+//TODO FIX SOMEHOW           $this->description .= '<br>' . $this->checkPayGwSatus();            
+            }
             $this->description .= '<br>' . str_replace('<svg ', '<svg class="img-fluid" ', $this->logo);
         }
     }
 
+    /**
+     * Perform initial payment request to be redirected int payment page
+     */
     private function prepare_payment() {
         //tep_redirect(tep_href_link('checkout_payment.php', 'payment_error=' . 'csob'));
-
-        $response = $this->getPayment()->requestPayment(Guarantor::ensure_global('order'));
+        $this->order->save();
+        $response = $this->getPayment()->requestPayment($this->order);
         $this->lastMessage = $response['resultMessage'];
         $_SESSION['csob_error'] = $response['resultMessage'];
         if ($response['resultCode'] != 0) {
@@ -135,14 +145,20 @@ class csob extends abstract_payment_module {
         $this->setOrderStatusByPaymentState();
     }
 
+    /**
+     * 
+     * @return \PureOSC\Payment
+     */
     public function getPayment() {
-
-        if (is_object($this->payment) === false) {
-            $this->payment = new \PureOSC\Payment(Guarantor::ensure_global('order'));
-        } else {
-            
+        if (is_null($this->order)) {
+            if (array_key_exists('order_id', $GLOBALS) === false) { //We need OrderNumber first
+                $this->getOrder()->save();
+            }
         }
 
+        if (is_object($this->payment) === false) {
+            $this->payment = new \PureOSC\Payment($this->getOrder()); //Guarantor::ensure_global('order') not work here
+        }
         return $this->payment;
     }
 
@@ -207,7 +223,9 @@ class csob extends abstract_payment_module {
     }
 
     public function getOrder($orderId = null) {
-        $this->order = Guarantor::ensure_global('PureOSC\Order', $orderId ? $orderId : false);
+        if (is_null($this->order)) {
+            $this->order = Guarantor::ensure_global('PureOSC\Order', array_key_exists('order_id', $GLOBALS) ? $GLOBALS['order_id'] : $orderId);
+        }
         return $this->order;
     }
 
@@ -230,7 +248,12 @@ class csob extends abstract_payment_module {
     }
 
     public function setOrderStatusByPaymentState($forceStatus = null) {
-        $paymentStatus = is_null($forceStatus) ? $this->getPayment()->getStatus() : $forceStatus;
+        if (array_key_exists('order_id', $GLOBALS)) {
+
+            $paymentStatus = is_null($forceStatus) ? $this->getPayment()->getStatus() : $forceStatus;
+        } else {
+            $paymentStatus = null;
+        }
         $newOrderStatus = 0;
         $currentOrderStatus = $this->getOrder()->getStatus();
 
@@ -347,6 +370,12 @@ class csob extends abstract_payment_module {
                 'use_func' => 'tep_get_order_status_name',
                 'public' => true
             ],
+            'MODULE_PAYMENT_CSOB_PRODUCTION' => [
+                'title' => 'Use production API',
+                'value' => 'False',
+                'desc' => 'Put false here to use testing API servers.',
+                'set_func' => "tep_cfg_select_option(['True', 'False'], "
+            ]
         ];
     }
 

@@ -25,4 +25,9 @@ const TEXT_ORDER_COST = 'Cena celkem:';
 const TEXT_VIEW_ORDER = 'Zobrazit objednávku';
 
 const TEXT_NO_PURCHASES = 'Nemáte ještě žádný nákup.';
+
+const BUTTON_VIEW_ORDER = '<i title="Zobrazit objednávku" class="fas fa-eye"></i>';
+
+
+
 ?>
