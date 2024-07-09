@@ -40,8 +40,8 @@
         error_log("ERROR: [{$this->errno}] {$this->error}\n" . "\n", 3, STORE_PAGE_PARSE_TIME_LOG);
       }
 
-      foreach (str_split("DB: [{$this->errno}] {$this->error}", 1024) as $line) {
-        trigger_error($line, E_USER_ERROR);
+      foreach (str_split("DB: [{$this->errno}] {$this->error} from <$sql>", 1024) as $line) {
+        trigger_error($line, E_USER_WARNING);
       }
 
       if (ini_get('display_errors')) {

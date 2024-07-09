@@ -23,20 +23,20 @@
           'title' => 'Enable Password module',
           'value' => 'True',
           'desc' => 'Do you want to add the module to your shop?',
-          'set_func' => "tep_cfg_select_option(['True', 'False'], ",
+          'set_func' => "Config::select_one(['True', 'False'], ",
         ],
         static::CONFIG_KEY_BASE . 'GROUP' => [
           'title' => 'Customer data group',
           'value' => '6',
           'desc' => 'In what group should this appear?',
-          'use_func' => 'tep_get_customer_data_group_title',
-          'set_func' => 'tep_cfg_pull_down_customer_data_groups(',
+          'use_func' => 'customer_data_group::fetch_name',
+          'set_func' => 'Config::select_customer_data_group(',
         ],
         static::CONFIG_KEY_BASE . 'REQUIRED' => [
           'title' => 'Require Password module (if enabled)',
           'value' => 'True',
           'desc' => 'Do you want the password to be required in customer registration?',
-          'set_func' => "tep_cfg_select_option(['True', 'False'], ",
+          'set_func' => "Config::select_one(['True', 'False'], ",
         ],
         static::CONFIG_KEY_BASE . 'MIN_LENGTH' => [
           'title' => 'Minimum Length',
@@ -47,7 +47,7 @@
           'title' => 'Pages',
           'value' => 'account_password;create_account;customers',
           'desc' => 'On what pages should this appear?',
-          'set_func' => 'tep_draw_account_edit_pages(',
+          'set_func' => 'Customers::select_pages(',
           'use_func' => 'abstract_module::list_exploded',
         ],
         static::CONFIG_KEY_BASE . 'SORT_ORDER' => [
@@ -78,27 +78,30 @@
       $label_text = constant($entry_base);
 
       $input_id = 'inputPassword';
-      $attribute = 'id="' . $input_id . '" autocapitalize="none" placeholder="' . constant($entry_base . '_TEXT') . '"';
-      $postInput = '';
+      $attributes = [
+        'id' => $input_id,
+        'autocapitalize' => 'none',
+        'autocomplete' => isset($customer_details['password'])
+                        ? 'current-password'
+                        : 'new-password',
+      ];
+
+      if (defined($entry_base . '_TEXT') && !Text::is_empty(constant($entry_base . '_TEXT'))) {
+        $attributes['placeholder'] = constant($entry_base . '_TEXT');
+      }
+
+      $input = new Input('password', $attributes, 'password');
+
       if ($this->is_required()) {
-        $attribute = self::REQUIRED_ATTRIBUTE . $attribute;
-        $postInput = FORM_REQUIRED_INPUT;
+        $input->require();
+        $input .= FORM_REQUIRED_INPUT;
       }
 
-      if (isset($customer_details['password'])) {
-        $attribute .= ' autocomplete="current-password"';
-      } else {
-        $attribute .= ' autocomplete="new-password"';
-      }
-
-      $input = tep_draw_input_field('password', null, $attribute, 'password')
-             . $postInput;
-
-      include $GLOBALS['oscTemplate']->map_to_template($this->base_constant('TEMPLATE'));
+      include Guarantor::ensure_global('Template')->map($this->base_constant('TEMPLATE'));
     }
 
     public function process(&$customer_details, $entry_base = 'ENTRY_PASSWORD') {
-      $customer_details['password'] = tep_db_prepare_input($_POST['password']);
+      $customer_details['password'] = Text::input($_POST['password']);
 
       if (strlen($customer_details['password']) < $this->base_constant('MIN_LENGTH')
         && ($this->is_required()
@@ -122,7 +125,7 @@
       }
 
       Guarantor::guarantee_subarray($db_tables, 'customers');
-      $db_tables['customers']['customers_password'] = tep_encrypt_password($customer_details['password']);
+      $db_tables['customers']['customers_password'] = Password::hash($customer_details['password']);
     }
 
     public function build_db_aliases(&$db_tables, $table = 'both') {

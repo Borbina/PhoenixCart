@@ -20,7 +20,7 @@
 
     public function get_module($field) {
       if (is_string($field)) {
-        return $this->providers[$field];
+        return $this->providers[$field] ?? null;
       }
 
       if ($field instanceof abstract_module) {
@@ -62,11 +62,11 @@
       $successful = true;
       $details = [];
       foreach ($purveyors as $purveyor) {
-        $successful = $successful && $this->act_on($purveyor, 'process', $details);
+        $successful = $this->act_on($purveyor, 'process', $details) && $successful;
       }
 
       if (!$successful) {
-        tep_block_form_processing();
+        Form::block_processing();
       }
 
       return $details;

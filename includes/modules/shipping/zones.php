@@ -133,8 +133,8 @@
               'title' => sprintf(MODULE_SHIPPING_ZONES_TEXT_WAY,
                 $order->delivery['country']['iso_code_2'],
                 $shipping_weight),
-              'cost' => ($zones_table[$i+1] * $GLOBALS['shipping_num_boxes'])
-                      + $this->base_constant("HANDLING_{$this->destination_zone}"),
+              'cost' => ((float)$zones_table[$i+1] * $GLOBALS['shipping_num_boxes'])
+                      + (float)$this->base_constant("HANDLING_{$this->destination_zone}"),
             ];
             break;
           }
@@ -159,14 +159,14 @@
           'title' => 'Enable Zones Method',
           'value' => 'True',
           'desc' => 'Do you want to offer zone rate shipping?',
-          'set_func' => "tep_cfg_select_option(['True', 'False'], ",
+          'set_func' => "Config::select_one(['True', 'False'], ",
         ],
         $this->config_key_base . 'TAX_CLASS' => [
           'title' => 'Tax Class',
           'value' => '0',
           'desc' => 'Use the following tax class on the shipping fee.',
-          'use_func' => 'tep_get_tax_class_title',
-          'set_func' => 'tep_cfg_pull_down_tax_classes(',
+          'use_func' => 'Tax::get_class_title',
+          'set_func' => 'Config::select_tax_class(',
         ],
         $this->config_key_base . 'SORT_ORDER' => [
           'title' => 'Sort Order',

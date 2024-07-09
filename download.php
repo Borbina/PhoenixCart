@@ -10,17 +10,33 @@
   Released under the GNU General Public License
 */
 
+// Upgrade notices, warnings, etc. to fatal errors
+// This prevents notices from appearing in the body of the file.
+  set_error_handler(function ($severity, $message, $file, $line, $unused = null) {
+    if (error_reporting() & $severity) {
+      throw new ErrorException($message, 0, $severity, $file, $line);
+    }
+  });
+  ob_start();
+
   include 'includes/application_top.php';
 
-  if (!isset($_SESSION['customer_id'])) die;
+  if (ob_get_contents()) {
+    error_log(sprintf('Unneeded output:  [%s]', ob_get_clean()));
+  }
+
+  ob_end_clean();
+
+  if (!isset($_SESSION['customer_id'])) {
+    die();
+  }
 
 // Check download.php was called with proper GET parameters
   if (!is_numeric($_GET['order'] ?? null) || !is_numeric($_GET['id'] ?? null) ) {
-    die;
+    die();
   }
-  
-// Check that order_id, customer_id and filename match
-  $downloads_query = tep_db_query(sprintf(<<<'EOSQL'
+
+  $downloads_query = $db->query(sprintf(<<<'EOSQL'
 SELECT opd.orders_products_filename
   FROM orders o
     INNER JOIN orders_products op ON o.orders_id = op.orders_id
@@ -36,71 +52,35 @@ SELECT opd.orders_products_filename
     AND os.language_id = %d
 EOSQL
     , (int)$_SESSION['customer_id'], (int)$_GET['order'], (int)$_GET['id'], (int)$_SESSION['languages_id']));
-  if (!tep_db_num_rows($downloads_query)) die;
-  $downloads = tep_db_fetch_array($downloads_query);
+  if (!mysqli_num_rows($downloads_query)) {
+    die();
+  }
+  $downloads = $downloads_query->fetch_assoc();
+  $path = DIR_FS_CATALOG . "download/{$downloads['orders_products_filename']}";
 
-// Die if file is not there
-  if (!file_exists(DIR_FS_CATALOG . 'download/' . $downloads['orders_products_filename'])) die;
-  
+  if (!file_exists($path)) {
+    die();
+  }
+
 // Now decrement counter
-  tep_db_query("UPDATE orders_products_download SET download_count = download_count-1 WHERE orders_products_download_id = " . (int)$_GET['id']);
+  $db->query("UPDATE orders_products_download SET download_count = download_count-1 WHERE orders_products_download_id = " . (int)$_GET['id']);
 
-// Returns a random name, 16 to 20 characters long
-// There are more than 10^28 combinations
-// The directory is "hidden", i.e. starts with '.'
-function tep_random_name() {
-  $letters = 'abcdefghijklmnopqrstuvwxyz';
-  $dirname = '.';
-  $length = floor(tep_rand(16,20));
-  for ($i = 1; $i <= $length; $i++) {
-   $q = floor(tep_rand(1,26));
-   $dirname .= $letters[$q];
+  if (DOWNLOAD_BY_REDIRECT === 'true') {
+// This will work only on Unix/Linux hosts, may be blocked by security restrictions,
+// doesn't actually enforce limits until a second person tries to download,
+// and has some race conditions (e.g. if two people try to download at the same time).
+// This is very efficient on server resources though.
+    redirect_downloader::link($path, $downloads['orders_products_filename']);
   }
-  return $dirname;
-}
-
-// Unlinks all subdirectories and files in $dir
-// Works only on one subdir level, will not recurse
-function tep_unlink_temp_dir($dir) {
-  $h1 = opendir($dir);
-  while ($subdir = readdir($h1)) {
-// Ignore non directories
-    if (!is_dir($dir . $subdir)) continue;
-// Ignore . and .. and CVS
-    if ($subdir == '.' || $subdir == '..' || $subdir == 'CVS') continue;
-// Loop and unlink files in subdirectory
-    $h2 = opendir($dir . $subdir);
-    while ($file = readdir($h2)) {
-      if ($file == '.' || $file == '..') continue;
-      @unlink($dir . $subdir . '/' . $file);
-    }
-    closedir($h2); 
-    @rmdir($dir . $subdir);
-  }
-  closedir($h1);
-}
 
 
 // Now send the file with header() magic
-  header("Expires: Mon, 26 Nov 1962 00:00:00 GMT");
-  header("Last-Modified: " . gmdate("D,d M Y H:i:s") . " GMT");
-  header("Cache-Control: no-cache, must-revalidate");
-  header("Pragma: no-cache");
-  header("Content-Type: Application/octet-stream");
-  header("Content-disposition: attachment; filename=" . $downloads['orders_products_filename']);
-
-  if (DOWNLOAD_BY_REDIRECT == 'true') {
-// This will work only on Unix/Linux hosts
-    tep_unlink_temp_dir('pub/');
-    $tempdir = tep_random_name();
-    umask(0000);
-    mkdir('pub/' . $tempdir, 0777);
-    symlink(DIR_FS_CATALOG . 'download/' . $downloads['orders_products_filename'], 'pub/' . $tempdir . '/' . $downloads['orders_products_filename']);
-    if (file_exists('pub/' . $tempdir . '/' . $downloads['orders_products_filename'])) {
-      tep_redirect(tep_href_link('pub/' . $tempdir . '/' . $downloads['orders_products_filename']));
-    }
-  }
+  header('Expires: Mon, 26 Nov 1962 00:00:00 GMT');
+  header('Last-Modified: ' . gmdate('D,d M Y H:i:s') . ' GMT');
+  header('Cache-Control: no-cache, must-revalidate');
+  header('Pragma: no-cache');
+  header('Content-Type: Application/octet-stream');
+  header('Content-disposition: attachment; filename="' . $downloads['orders_products_filename'] . '"');
 
 // Fallback to readfile() delivery method. This will work on all systems, but will need considerable resources
-  readfile(DIR_FS_CATALOG . 'download/' . $downloads['orders_products_filename']);
-?>
+  readfile($path);

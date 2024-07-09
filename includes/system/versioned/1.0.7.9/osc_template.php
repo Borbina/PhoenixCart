@@ -12,11 +12,11 @@
 
   class oscTemplate {
 
-    private $_title;
-    private $_blocks = [];
-    private $_content = [];
+    protected $_title;
+    protected $_blocks = [];
+    protected $_content = [];
     public $_data = [];
-    private $_template;
+    protected $_template;
 
     public function __construct($template = null) {
       if (is_object($template)) {
@@ -58,14 +58,14 @@
     }
 
     public function buildBlocks() {
-      if ( !defined('TEMPLATE_BLOCK_GROUPS') || !tep_not_null(TEMPLATE_BLOCK_GROUPS) ) {
+      if ( !defined('TEMPLATE_BLOCK_GROUPS') || Text::is_empty(TEMPLATE_BLOCK_GROUPS) ) {
         return;
       }
 
       foreach (explode(';', TEMPLATE_BLOCK_GROUPS) as $group) {
         $module_key = 'MODULE_' . strtoupper($group) . '_INSTALLED';
 
-        if ( !defined($module_key) || !tep_not_null(constant($module_key)) ) {
+        if ( !defined($module_key) || Text::is_empty(constant($module_key)) ) {
           continue;
         }
 
@@ -116,26 +116,29 @@
         'group' => $group,
         'content' => &$this->_content[$group],
       ];
-      $GLOBALS['OSCOM_Hooks']->call('siteWide', 'getContent', $parameters);
+      $GLOBALS['all_hooks']->cat('getContent', $parameters);
       if ($this->hasContent($group)) {
         return implode("\n", $this->_content[$group]);
       }
     }
 
     public function getContentModules($group) {
-      $result = [];
+      $modules = [];
 
       foreach ( explode(';', MODULE_CONTENT_INSTALLED) as $m ) {
         $module = explode('/', $m, 2);
 
         if ( $module[0] == $group ) {
-          $result[] = $module[1];
+          $modules[] = $module[1];
         }
       }
 
-      $parameters = [ 'results' => &$results ];
-      $GLOBALS['OSCOM_Hooks']->call('siteWide', 'getContentModules', $parameters);
-      return $result;
+      $parameters = [
+        'group' => $group,
+        'modules' => &$modules,
+      ];
+      $GLOBALS['all_hooks']->cat('getContentModules', $parameters);
+      return $modules;
     }
 
     public function map_to_template($file, $type = 'module') {
